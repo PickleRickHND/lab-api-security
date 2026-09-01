@@ -1,6 +1,7 @@
 # Compilación de .NET
 bin/
 obj/
+publish/
 
 # Configuración local y secretos
 .env
