@@ -1,0 +1,23 @@
+# Compilación de .NET
+bin/
+obj/
+
+# Configuración local y secretos
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+# IDE y sistema operativo
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+.DS_Store
+
+# Cobertura y pruebas
+TestResults/
+coverage/
+*.coverage
+*.coveragexml

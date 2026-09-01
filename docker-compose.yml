@@ -1,0 +1,25 @@
+services:
+  secure-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secure_api_lab
+    ports:
+      - "8080:8080"
+    # Hardening del contenedor en runtime
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+
+networks:
+  default:
+    driver: bridge
