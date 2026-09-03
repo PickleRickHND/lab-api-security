@@ -1,0 +1,45 @@
+@SecureApi_HostAddress = http://localhost:8080
+@AccessToken = PEGUE_AQUI_SU_ACCESS_TOKEN
+
+### Obtener un access token local. Copie accessToken en la variable anterior.
+POST {{SecureApi_HostAddress}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "alice",
+  "password": "Alice123!"
+}
+
+###
+
+### Sin JWT: debe responder 401 Unauthorized.
+GET {{SecureApi_HostAddress}}/api/v1/documents/secure/1
+Accept: application/json
+
+###
+
+### Ver la identidad extraída del JWT: debe responder usr_alice.
+GET {{SecureApi_HostAddress}}/api/v1/documents/whoami
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+### Control BOLA mitigado: 200 si el propietario coincide.
+GET {{SecureApi_HostAddress}}/api/v1/documents/secure/1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+### Control BOLA mitigado: 403 si el documento pertenece a otro usuario.
+GET {{SecureApi_HostAddress}}/api/v1/documents/secure/2
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+### BOLA intencional: permite consultar otro documento con un JWT válido.
+GET {{SecureApi_HostAddress}}/api/v1/documents/vulnerable/2
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
