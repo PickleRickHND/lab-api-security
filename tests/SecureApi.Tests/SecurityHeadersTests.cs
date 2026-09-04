@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +12,7 @@ using Xunit;
 
 namespace SecureApi.Tests;
 
-public sealed class SecurityHeadersTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class SecurityHeadersTests : IClassFixture<SecureApiFactory>
 {
     private const string ApiContentSecurityPolicy =
         "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
@@ -22,16 +21,13 @@ public sealed class SecurityHeadersTests : IClassFixture<WebApplicationFactory<P
 
     private const string PermissionsPolicy = "camera=(), geolocation=(), microphone=()";
 
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly SecureApiFactory _factory;
     private readonly HttpClient _client;
 
-    public SecurityHeadersTests(WebApplicationFactory<Program> factory)
+    public SecurityHeadersTests(SecureApiFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            AllowAutoRedirect = false
-        });
+        _client = factory.CreateApiClient();
     }
 
     [Theory]
@@ -43,9 +39,39 @@ public sealed class SecurityHeadersTests : IClassFixture<WebApplicationFactory<P
         string path,
         HttpStatusCode expectedStatus)
     {
-        using var response = await _client.GetAsync(path, TestContext.Current.CancellationToken);
+        using var client = await _factory.CreateAuthenticatedClientAsync(
+            cancellationToken: TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
 
         Assert.Equal(expectedStatus, response.StatusCode);
+        AssertGlobalSecurityHeaders(response);
+        AssertHeader(response, "Content-Security-Policy", ApiContentSecurityPolicy);
+        AssertHeader(response, "Cache-Control", "no-store");
+    }
+
+    [Fact]
+    public async Task RespuestaUnauthorizedConservaCabecerasYDesafioBearer()
+    {
+        using var response = await _client.GetAsync(
+            "/api/v1/documents/secure/1",
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("Bearer", Assert.Single(response.Headers.WwwAuthenticate).Scheme);
+        AssertGlobalSecurityHeaders(response);
+        AssertHeader(response, "Content-Security-Policy", ApiContentSecurityPolicy);
+        AssertHeader(response, "Cache-Control", "no-store");
+    }
+
+    [Fact]
+    public async Task LoginConservaCabecerasDefensivas()
+    {
+        using var response = await _client.PostAsJsonAsync(
+            "/api/v1/auth/login",
+            new { username = "alice", password = "Alice123!" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         AssertGlobalSecurityHeaders(response);
         AssertHeader(response, "Content-Security-Policy", ApiContentSecurityPolicy);
         AssertHeader(response, "Cache-Control", "no-store");
@@ -80,7 +106,9 @@ public sealed class SecurityHeadersTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task ComportamientoIntencionalDelLaboratorioPermaneceIntacto()
     {
-        using var response = await _client.GetAsync(
+        using var client = await _factory.CreateAuthenticatedClientAsync(
+            cancellationToken: TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync(
             "/api/v1/documents/vulnerable/1",
             TestContext.Current.CancellationToken);
 
