@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using SecureApi.Security;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -16,6 +18,27 @@ builder.WebHost.ConfigureKestrel(options =>
 
 // Agregar servicios de controladores al contenedor DI
 builder.Services.AddControllers();
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
+        httpContext =>
+        {
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: clientIp,
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromSeconds(10),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+        });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
 // Opcional: Documentación Swagger/OpenAPI para pruebas en el laboratorio
 builder.Services.AddEndpointsApiExplorer();
@@ -94,6 +117,7 @@ if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Ena
     app.UseSwaggerUI();
 }
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

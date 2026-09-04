@@ -21,7 +21,7 @@ El ejercicio está dividido en tres áreas principales:
 | --- | --- | --- |
 | Cabeceras HTTP | Implementado | Incluye pruebas de API, Swagger, errores y contrato `429` |
 | Docker | Implementado | La imagen se compila desde el código fuente actual |
-| Rate Limiting | Pendiente de integración | Debe aportar la respuesta `429` real |
+| Rate Limiting | Implementado | 10 solicitudes por 10 segundos por IP; exceso rechazado con `429 Too Many Requests` |
 | JWT Bearer | Implementado | Login local, emisión HS256 y validación de firma, issuer, audience y expiración |
 | Demostración BOLA/IDOR | Implementada | Ambos endpoints requieren JWT; uno omite intencionalmente el control de propietario |
 
@@ -170,8 +170,8 @@ conservación de `Retry-After` y `RateLimit-*`.
   `Jwt__SigningKey` o `JWT_SIGNING_KEY` al usar Docker Compose.
 - Esta implementación demuestra JWT Bearer con emisión local. No implementa un
   Authorization Server ni todos los flujos del protocolo OAuth 2.0.
-- El endpoint de login realiza PBKDF2 y deberá recibir la política de rate
-  limiting cuando se integre el punto b del laboratorio.
+- El rate limiting global protege también el endpoint de login frente a
+  solicitudes excesivas.
 - HSTS debe habilitarse únicamente cuando el despliegue utilice HTTPS/TLS real.
 - Los artefactos `publish/` no se versionan; Docker los genera desde el código
   fuente para evitar ejecutar binarios desactualizados.
