@@ -18,6 +18,11 @@ builder.WebHost.ConfigureKestrel(options =>
 
 // Agregar servicios de controladores al contenedor DI
 builder.Services.AddControllers();
+
+// El Rate Limiting puede desactivarse solo para el ejercicio de contraste del
+// laboratorio de carga (RateLimiting:Enabled=false). Por defecto queda activo.
+var rateLimitingEnabled = builder.Configuration.GetValue("RateLimiting:Enabled", true);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
@@ -117,7 +122,16 @@ if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Ena
     app.UseSwaggerUI();
 }
 
-app.UseRateLimiter();
+if (rateLimitingEnabled)
+{
+    app.UseRateLimiter();
+}
+else
+{
+    app.Logger.LogWarning(
+        "Rate Limiting DESACTIVADO (RateLimiting:Enabled=false). Uso exclusivo para pruebas de carga.");
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

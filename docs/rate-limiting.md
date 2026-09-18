@@ -62,6 +62,20 @@ app.UseAuthorization();
 
 Esto permite rechazar solicitudes excesivas antes de que continúen hacia los mecanismos de autenticación, autorización y los controladores.
 
+## Desactivación temporal para pruebas de carga
+
+La política puede desactivarse con la configuración `RateLimiting:Enabled`
+(por defecto `true`). Con Docker Compose:
+
+```bash
+RATE_LIMITING_ENABLED=false docker compose up -d
+```
+
+La API registra una advertencia en el log al iniciar sin la defensa. Este modo
+existe únicamente para el contraste del laboratorio de carga (`load-tests/`);
+la suite de pruebas lo usa en el fixture compartido y verifica la política de
+forma aislada en `RateLimitingTests`.
+
 ## Verificación manual
 
 Para comprobar el límite configurado se pueden ejecutar 11 solicitudes consecutivas contra un endpoint protegido:
