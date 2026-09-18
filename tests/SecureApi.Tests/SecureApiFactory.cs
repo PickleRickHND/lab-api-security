@@ -19,6 +19,10 @@ public sealed class SecureApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:Audience", Audience);
         builder.UseSetting("Jwt:SigningKey", SigningKey);
         builder.UseSetting("Jwt:ExpirationMinutes", "30");
+
+        // En TestServer todas las solicitudes comparten la partición "unknown";
+        // el limitador se prueba de forma aislada en RateLimitingTests.
+        builder.UseSetting("RateLimiting:Enabled", "false");
     }
 
     internal HttpClient CreateApiClient()

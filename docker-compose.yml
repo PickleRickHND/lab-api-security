@@ -11,6 +11,9 @@ services:
       EnableSwagger: "true"
       # Compose falla de forma segura si no se configuró la clave en .env.
       Jwt__SigningKey: "${JWT_SIGNING_KEY:?Defina JWT_SIGNING_KEY en el archivo .env}"
+      # Solo para el contraste del laboratorio de carga (Plus):
+      #   RATE_LIMITING_ENABLED=false docker compose up -d
+      RateLimiting__Enabled: "${RATE_LIMITING_ENABLED:-true}"
     # Hardening del contenedor en runtime
     read_only: true
     tmpfs:
